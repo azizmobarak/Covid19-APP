@@ -282,6 +282,18 @@ class _NotificationsettingsState extends State<Notificationsettings> {
     }
   }
 
+//changed values for sound options
+ bool sound=false;
+ Icon soundicon=Icon(Icons.notifications_off,color: Colors.green,);
+
+ Icon changeIcon(value){
+if(value==true){
+  return Icon(Icons.notifications_off,color:Colors.red,);
+}else{
+    return Icon(Icons.notifications_active,color: Colors.green,);
+}
+ }
+///////////////////////////////////////////////
   @override
   Widget build(BuildContext context) {
     var alertStyle = AlertStyle(
@@ -344,7 +356,14 @@ class _NotificationsettingsState extends State<Notificationsettings> {
                             color: Theme.of(context).accentColor, size: 44),
                       ],
                     ),
-                    Divider(color: Colors.white, height: 60),
+                    Divider(color: Colors.white, height: 40),
+                     Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: <Widget>[
+                            buildedswitch("sound", "sound", 100),
+                            soundicon
+                        ],),
+                        Divider(height: 30,),
                     Row(
                         mainAxisAlignment: MainAxisAlignment.end,
                         children: <Widget>[
@@ -467,9 +486,9 @@ class _NotificationsettingsState extends State<Notificationsettings> {
                       message = "لاتاكل قبل غسل يديك و التاكد من سلامة الطعام";
                       title = "انتبه فالفيروسات قد تتسلل مع الطعام";
                       dailyNotification1(
-                          3, channel, channel, title, message, 12, 24);
+                          3, channel, channel, title, message, 9, 24);
                       dailyNotification1(
-                          33, channel, channel, title, message, 20, 40);
+                          33, channel, channel, title, message, 3, 24);
                     }
                     if (channel == "getout") {
                       message =
@@ -484,12 +503,16 @@ class _NotificationsettingsState extends State<Notificationsettings> {
                       title =
                           "الرياضة اخلاق طبقها اليوم وتمرن في البيت باي وسيلة واحمي غيرك";
                       dailyNotification2(
-                          4, channel, channel, title, message, 10, 33);
+                          4, channel, channel, title, message, 8, 26);
                       dailyNotification2(
-                          44, channel, channel, title, message, 18, 50);
+                          44, channel, channel, title, message, 18, 26);
                     }
                   }
-                }
+                   if(channel=="sound" && key=="sound"){
+                     
+                      print(channel+" / "+"clicked");
+                    }
+                  }
               });
             },
             activeTrackColor: Colors.lightGreenAccent,
@@ -524,6 +547,12 @@ class _NotificationsettingsState extends State<Notificationsettings> {
       flutterLocalNotificationsPlugin.cancel(4);
       flutterLocalNotificationsPlugin.cancel(44);
     }
+     if(key=="sound"){
+      setState(() {
+        sound = val;
+        soundicon=changeIcon(val);
+      });
+    }
     prefs.setBool(key, val);
   }
 
@@ -550,12 +579,22 @@ class _NotificationsettingsState extends State<Notificationsettings> {
     await flutterLocalNotificationsPlugin.cancel(id3);
   }
 
+String song ;
+  //notification method with a hourly interval
   Future<void> cleanNotification(id, channel, idchannel, title, message) async {
     var vibrationPattern = Int64List(4);
     vibrationPattern[0] = 0;
     vibrationPattern[1] = 1000;
     vibrationPattern[2] = 5000;
     vibrationPattern[3] = 2000;
+
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+     if(prefs.getBool("sound")==true){
+         song="sound";
+      }
+     else{
+      song=channel;
+     }
 
     var androidPlatformChannelSpecifics = AndroidNotificationDetails(
         "clean", "channelclean", "this channel is for clean notifications",
@@ -564,8 +603,9 @@ class _NotificationsettingsState extends State<Notificationsettings> {
         priority: Priority.High,
         ongoing: true,
         autoCancel: false,
-        sound: RawResourceAndroidNotificationSound(channel),
+        sound: RawResourceAndroidNotificationSound(song),
         largeIcon: DrawableResourceAndroidBitmap('@mipmap/ic_launcher'),
+        //styleInformation:bigPictureStyleInformation,
         vibrationPattern: vibrationPattern,
         enableLights: true,
         color: const Color.fromARGB(255, 255, 0, 0),
@@ -586,6 +626,7 @@ class _NotificationsettingsState extends State<Notificationsettings> {
     });
   }
 
+  //notification method with a hourly interval
   Future<void> getoutNotification(
       id, channel, idchannel, title, message) async {
     print('getout start');
@@ -596,6 +637,15 @@ class _NotificationsettingsState extends State<Notificationsettings> {
     vibrationPattern[2] = 5000;
     vibrationPattern[3] = 2000;
 
+
+   SharedPreferences prefs = await SharedPreferences.getInstance();
+       if(prefs.getBool("sound")==true){
+         song="sound";
+      }
+     else{
+      song=channel;
+     }
+
     var androidPlatformChannelSpecifics = AndroidNotificationDetails(
         "getout", "channelgetout", "this is a getout notification",
         icon: '@mipmap/ic_launcher',
@@ -603,8 +653,9 @@ class _NotificationsettingsState extends State<Notificationsettings> {
         priority: Priority.High,
         ongoing: true,
         autoCancel: false,
-        sound: RawResourceAndroidNotificationSound(channel),
+        sound: RawResourceAndroidNotificationSound(song),
         largeIcon: DrawableResourceAndroidBitmap('@mipmap/ic_launcher'),
+        //styleInformation:bigPictureStyleInformation,
         vibrationPattern: vibrationPattern,
         enableLights: true,
         color: const Color.fromARGB(255, 255, 0, 0),
@@ -625,6 +676,8 @@ class _NotificationsettingsState extends State<Notificationsettings> {
     });
   }
 
+//
+  //notification method with a hourly interval
   Future<void> dailyNotification1(
       id, channel, idchannel, title, message, hour, minute) async {
     print(channel + 'start');
@@ -634,6 +687,14 @@ class _NotificationsettingsState extends State<Notificationsettings> {
     vibrationPattern[2] = 5000;
     vibrationPattern[3] = 2000;
 
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+       if(prefs.getBool("sound")==true){
+         song="sound";
+      }
+     else{
+      song=channel;
+     }
+     
     var androidPlatformChannelSpecifics = AndroidNotificationDetails(
         'idis' + id.toString(),
         'channel' + id.toString(),
@@ -643,8 +704,9 @@ class _NotificationsettingsState extends State<Notificationsettings> {
         priority: Priority.High,
         ongoing: true,
         autoCancel: false,
-        sound: RawResourceAndroidNotificationSound(channel),
+        sound: RawResourceAndroidNotificationSound(song),
         largeIcon: DrawableResourceAndroidBitmap('@mipmap/ic_launcher'),
+        //styleInformation:bigPictureStyleInformation,
         vibrationPattern: vibrationPattern,
         enableLights: true,
         color: const Color.fromARGB(255, 255, 0, 0),
@@ -665,6 +727,7 @@ class _NotificationsettingsState extends State<Notificationsettings> {
       $payload = channel;
     });
   }
+
 
   Future<void> dailyNotification2(
       id, channel, idchannel, title, message, hour, minute) async {
@@ -675,6 +738,14 @@ class _NotificationsettingsState extends State<Notificationsettings> {
     vibrationPattern[2] = 5000;
     vibrationPattern[3] = 2000;
 
+     SharedPreferences prefs = await SharedPreferences.getInstance();
+       if(prefs.getBool("sound")==true){
+         song="sound";
+      }
+     else{
+      song=channel;
+     }
+
     var androidPlatformChannelSpecifics = AndroidNotificationDetails(
         'idis' + id.toString(),
         'channel' + id.toString(),
@@ -684,8 +755,9 @@ class _NotificationsettingsState extends State<Notificationsettings> {
         priority: Priority.High,
         ongoing: true,
         autoCancel: false,
-        sound: RawResourceAndroidNotificationSound(channel),
+        sound: RawResourceAndroidNotificationSound(song),
         largeIcon: DrawableResourceAndroidBitmap('@mipmap/ic_launcher'),
+        //styleInformation:bigPictureStyleInformation,
         vibrationPattern: vibrationPattern,
         enableLights: true,
         color: const Color.fromARGB(255, 255, 0, 0),
@@ -706,6 +778,7 @@ class _NotificationsettingsState extends State<Notificationsettings> {
       $payload = channel;
     });
   }
+ 
 }
 
 class SecondScreen extends StatefulWidget {
