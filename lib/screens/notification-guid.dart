@@ -1,12 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:sensibilisation/localization/localization_constants.dart';
 
 class Guide extends StatelessWidget {
-  final List<String> texts = [
-    "يمكنك تشغيل المنبه الذكي في المنزل لتذكيرك بضرورة غسل اليدين بالصابون ...",
-    "يمكنك تشغيل المنبه الذكي عند الخروج من المنزل لتذكيرك بضرورة إحترام التباعد مع الاخرين وعدم ملامسة الاسطح... ",
-    " يمكن للمنبه الذكي ايضا تذكيرك بممارسة الرياضة لتقوية المناعة داخل الجسم",
-    "بتشغيل خاصية التغذية يمكن للمنبه الذكي تذكيرك بضرورة تناول أغذية متنوعة لتقوية المناعة"
-  ];
   List<Color> firstCard = [Color(0xffCF5AEF), Color(0xffFE3258)];
   List<Color> secondCard = [Color(0xff56AB2F), Color(0xffA8E063)];
   List<Color> thirdard = [Color(0xff0CDAE4), Color(0xff1A41FD)];
@@ -16,6 +11,12 @@ class Guide extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final List<String> texts = [
+      getTranslated(context, "firstCardTitle"),
+      getTranslated(context, "secondCardTitle"),
+      getTranslated(context, "thirdCardTitle"),
+      getTranslated(context, "fourthCardTitle")
+    ];
     Widget diver = Divider(
       height: 8,
     );
@@ -44,10 +45,13 @@ class Guide extends StatelessWidget {
                   SizedBox(
                     height: 28,
                   ),
-                  Text('توصيات المنبه الذكي',
+                  Text(getTranslated(context, "guideTitle"),
                       style: TextStyle(
                           fontSize: 30, color: Theme.of(context).accentColor),
                       textAlign: TextAlign.center),
+                  SizedBox(
+                    height: 25,
+                  ),
                   Icon(Icons.hearing,
                       size: 50, color: Theme.of(context).accentColor),
                   diver2,

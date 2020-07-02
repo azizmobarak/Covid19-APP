@@ -1,4 +1,4 @@
-package com.sensibilisation19.app
+package com.sensibilisationapp.com
 
 import androidx.annotation.NonNull;
 import io.flutter.embedding.android.FlutterActivity

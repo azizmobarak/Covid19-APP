@@ -2,7 +2,10 @@ import 'dart:io';
 import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
+import 'package:sensibilisation/classes/language.dart';
 import 'package:sensibilisation/screens/animation.dart';
+import 'package:sensibilisation/screens/chooseLanguage.dart';
 import 'package:sensibilisation/screens/notification-guid.dart';
 import 'package:sensibilisation/screens/settings.dart';
 import 'package:sensibilisation/widgets/text.dart';
@@ -15,6 +18,12 @@ import 'package:flutter/cupertino.dart';
 import 'package:rxdart/subjects.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:ui';
+import './localization/localization_constants.dart';
+import './localization/demo_localization.dart';
+import './screens/sos.dart';
+import 'package:rflutter_alert/rflutter_alert.dart';
+import './screens/home_page.dart';
+import './screens/explain.dart';
 
 class ReceivedNotification {
   final int id;
@@ -72,40 +81,96 @@ void main() async {
 }
 
 class MyApp extends StatefulWidget {
+  static void setLocale(BuildContext context, Locale locale) {
+    _MyAppState state = context.findAncestorStateOfType<_MyAppState>();
+    state.setLocale(locale);
+  }
+
   @override
   _MyAppState createState() => _MyAppState();
 }
 
 class _MyAppState extends State<MyApp> {
+  Locale _locale;
+  void setLocale(Locale locale) {
+    Future.delayed(const Duration(milliseconds: 300), () {
+      setState(() {
+        _locale = locale;
+      });
+    });
+  }
+
+  @override
+  void didChangeDependencies() {
+    getLocale().then((locale) => {
+          setState(() {
+            this._locale = locale;
+          })
+        });
+    super.didChangeDependencies();
+  }
+
   @override
   Widget build(BuildContext context) {
     SystemChrome.setEnabledSystemUIOverlays([]);
     return ChangeNotifierProvider(
-      create: (_) => ThemeNotifier(),
-      child: MaterialAppWdg(),
-    );
+        create: (_) => ThemeNotifier(),
+        child: _locale == null
+            ? CircularProgressIndicator()
+            : MaterialAppWdg(_locale));
   }
 }
 
-class MaterialAppWdg extends StatelessWidget {
+class MaterialAppWdg extends StatefulWidget {
+  Locale locale2;
+
+  MaterialAppWdg(this.locale2);
+
+  @override
+  _MaterialAppWdgState createState() => _MaterialAppWdgState();
+}
+
+class _MaterialAppWdgState extends State<MaterialAppWdg> {
   @override
   Widget build(BuildContext context) {
     return Consumer<ThemeNotifier>(
       builder: (context, ThemeNotifier notifier, child) {
         return MaterialApp(
+          supportedLocales: [
+            Locale('ar', 'MA'), // Arabic
+            Locale('fr', 'FR'),
+            Locale('en', 'EN') // English
+          ],
+          locale: widget.locale2,
+          localizationsDelegates: [
+            DemoLocalizations.delegate,
+            // ... app-specific localization delegate[s] here
+            GlobalMaterialLocalizations.delegate,
+            GlobalWidgetsLocalizations.delegate,
+            GlobalCupertinoLocalizations.delegate,
+          ],
           debugShowCheckedModeBanner: false,
-        
           theme: notifier.isDark ? darkMode : lightMode,
-          initialRoute: '/animation',
-          home: Notificationsettings(),
+          //    initialRoute: '/home',
+          localeResolutionCallback: (deviceLocale, supportedLocales) {
+            for (var locale in supportedLocales) {
+              if (locale.languageCode == deviceLocale.languageCode &&
+                  locale.countryCode == deviceLocale.countryCode) {
+                return deviceLocale;
+              }
+            }
+            return supportedLocales.first;
+          },
+          home: Splash(),
           routes: {
             'secondscreen': (context) => SecondScreen($payload),
-       
             '/animation': (context) => MyAnimation(),
-          
             '/notification': (context) => Notificationsettings(),
-           
             '/settings': (context) => AppSettings(),
+            '/sos': (context) => Sos(),
+            '/home': (context) => HomeScreen(),
+            '/explain': (context) => Explain(),
+            '/chooselanguage': (context) => ChooseLanguage()
           },
         );
       },
@@ -136,6 +201,11 @@ class Notificationsettings extends StatefulWidget {
 }
 
 class _NotificationsettingsState extends State<Notificationsettings> {
+  // void _changeLanguage(Language language) async {
+  //   Locale _temp = await setLocale(language.languageCode);
+  //   MyApp.setLocale(context, _temp);
+  // }
+
   final MethodChannel platform =
       MethodChannel('crossingthestreams.io/resourceResolver');
 
@@ -206,7 +276,7 @@ class _NotificationsettingsState extends State<Notificationsettings> {
 
   String whatOSis() {
     if (Platform.isAndroid) {
-      return "https://play.google.com/store/apps/details?id=com.sensibilisation19.app&hl=en";
+      return "https://play.google.com/store/apps/details?id=com.sensibilisationapp.com&hl=en";
     } else if (Platform.isIOS) {
       return "'https://apps.apple.com/us/app/'";
     }
@@ -214,118 +284,36 @@ class _NotificationsettingsState extends State<Notificationsettings> {
 
   @override
   Widget build(BuildContext context) {
+    var alertStyle = AlertStyle(
+        backgroundColor: Color(0xFF243953),
+        animationType: AnimationType.fromTop,
+        isCloseButton: true,
+        isOverlayTapDismiss: true,
+        //   descStyle: TextStyle(fontWeight: FontWeight.bold),
+        animationDuration: Duration(milliseconds: 400),
+        alertBorder: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(0.0),
+          side: BorderSide(
+            color: Colors.grey,
+          ),
+        ),
+        titleStyle: TextStyle(
+          color: Colors.white,
+        ),
+        descStyle: TextStyle(color: Colors.white54));
+
     TextStyle textStyle = TextStyle(
-      color: Theme.of(context).accentColor,
-    );
+        color: Theme.of(context).accentColor,
+        // fontWeight: FontWeight.bold,
+        fontSize: 17);
     return Scaffold(
-        appBar: AppBar(),
-        drawer: Column(
-          children: <Widget>[
-            Container(
-              width: MediaQuery.of(context).size.width / 1.5,
-              height: MediaQuery.of(context).size.height,
-              child: Drawer(
-                elevation: 0,
-                child: SingleChildScrollView(
-                  child: Column(
-                    children: <Widget>[
-                      Container(
-                        padding: EdgeInsets.only(bottom: 18, top: 18),
-                        width: MediaQuery.of(context).size.width,
-                        height: MediaQuery.of(context).size.height * 0.3,
-                        color: Colors.deepOrange,
-                        child: CircleAvatar(
-                          backgroundColor: Colors.transparent,
-                          child: Image.asset('assets/images/0.png'),
-                        ),
-                      ),
-                      Container(
-                        height: MediaQuery.of(context).size.height,
-                        child: Material(
-                          color: Theme.of(context).scaffoldBackgroundColor,
-                          child: Column(
-                            children: <Widget>[
-                              SizedBox(height: 35),
-                              ListTile(
-                                title: Text(
-                                  'تقييم التطبيق',
-                                  style: textStyle,
-                                ),
-                                trailing: Icon(
-                                  Icons.star,
-                                  color: Theme.of(context).accentColor,
-                                ),
-                                onTap: () => launch(whatOSis()),
-                              ),
-                              SizedBox(height: 5),
-                              ListTile(
-                                title: Text(
-                                  'موقعنا الرسمي',
-                                  style: textStyle,
-                                ),
-                                onTap: () =>
-                                    launch('https://sensibilisation19.com/'),
-                                trailing: Icon(
-                                  Icons.apps,
-                                  color: Theme.of(context).accentColor,
-                                ),
-                              ),
-                              SizedBox(height: 5),
-                              ListTile(
-                                title: Text(
-                                  'الإبلاغ عن مشكلة',
-                                  style: textStyle,
-                                ),
-                                onTap: () => launch('mailto:info@simpower.ma'),
-                                trailing: Icon(
-                                  Icons.bug_report,
-                                  color: Theme.of(context).accentColor,
-                                ),
-                              ),
-                              SizedBox(height: 5),
-                              ListTile(
-                                title: Text(
-                                  'تواصل معنا',
-                                  style: textStyle,
-                                ),
-                                onTap: () => launch('mailto:info@simpower.ma'),
-                                trailing: Icon(
-                                  Icons.phone,
-                                  color: Theme.of(context).accentColor,
-                                ),
-                              ),
-                              ListTile(
-                                title: Text(
-                                  'إعدادات التطبيق',
-                                  style: textStyle,
-                                ),
-                                trailing: Icon(
-                                  Icons.settings,
-                                  color: Theme.of(context).accentColor,
-                                ),
-                                onTap: () =>
-                                    Navigator.pushNamed(context, '/settings'),
-                              ),
-                              SizedBox(height: 5),
-                              ListTile(
-                                title: Center(
-                                  child: Text('Simpower@2020',
-                                      style: TextStyle(
-                                        fontSize: 18,
-                                        color: Colors.white24,
-                                      )),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      )
-                    ],
-                  ),
-                ),
-              ),
-            ),
-          ],
+        appBar: AppBar(
+          centerTitle: true,
+          title: Text(
+            "توعية",
+            style: TextStyle(fontSize: 28),
+          ),
+          actions: <Widget>[],
         ),
         backgroundColor: Theme.of(context).scaffoldBackgroundColor,
         body: Center(
@@ -333,112 +321,124 @@ class _NotificationsettingsState extends State<Notificationsettings> {
             child: Stack(children: <Widget>[
               Container(
                   padding: EdgeInsets.all(23),
-                  decoration: BoxDecoration(),
-                  child: Column(
+                  child: Column(children: <Widget>[
+                    Row(
+                      // mainAxisAlignment: MainAxisAlignment.center,
+                      children: <Widget>[
+                        Expanded(
+                          child: Text(
+                            getTranslated(context, 'topText'),
+                            textAlign: TextAlign.center,
+                            style: TextStyle(
+                              fontSize: 25,
+                            ),
+                          ),
+                        )
+                      ],
+                    ),
+                    SizedBox(height: 25),
+                    Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: <Widget>[
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: <Widget>[
-                            Texts().text('اعدادات التنبيه الوقائي', 30,
+                        Icon(Icons.notifications_active,
+                            color: Theme.of(context).accentColor, size: 44),
+                      ],
+                    ),
+                    Divider(color: Colors.white, height: 60),
+                    Row(
+                        mainAxisAlignment: MainAxisAlignment.end,
+                        children: <Widget>[
+                          SizedBox(
+                            width: 280,
+                            child: Texts().text(
+                                //   'التذكير  بالحفاظ على النظافة',
+                                getTranslated(context, 'firstNotification'),
+                                20,
                                 Theme.of(context).accentColor),
-                          ],
-                        ),
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
+                          ),
+                          buildedswitch("clean", "clean", 1),
+                        ]),
+                    Divider(),
+                    Row(
+                        mainAxisAlignment: MainAxisAlignment.end,
+                        children: <Widget>[
+                          SizedBox(
+                            width: 280,
+                            child: Texts().text(
+                                //     'التذكير بالتدابير الوقائية عند الخروج من البيت',
+                                getTranslated(context, 'secondNotification'),
+                                20,
+                                Theme.of(context).accentColor),
+                          ),
+                          buildedswitch('getout', 'getout', 2),
+                        ]),
+                    Divider(),
+                    Row(
+                        mainAxisAlignment: MainAxisAlignment.end,
+                        children: <Widget>[
+                          SizedBox(
+                            width: 280,
+                            child: Texts().text(
+                                getTranslated(context, 'thirdNotification'),
+                                20,
+                                Theme.of(context).accentColor),
+                          ),
+                          buildedswitch("eat", "eat", 3),
+                        ]),
+                    Row(
+                        mainAxisAlignment: MainAxisAlignment.end,
+                        children: <Widget>[
+                          SizedBox(
+                            width: 280,
+                            child: Texts().text(
+                                getTranslated(context, 'fifthNotification'),
+                                20,
+                                Theme.of(context).accentColor),
+                          ),
+                          buildedswitch("sport", "sport", 4),
+                        ]),
+                    Divider(color: Colors.white, height: 30),
+                    Padding(
+                      padding: const EdgeInsets.all(0),
+                      child: Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: <Widget>[
-                            Icon(Icons.notifications_active,
-                                color: Theme.of(context).accentColor, size: 44),
-                          ],
-                        ),
-                        Divider(color: Colors.white, height: 60),
-                        Row(
-                            mainAxisAlignment: MainAxisAlignment.end,
-                            children: <Widget>[
-                              buildedswitch("clean", "clean", 1),
-                              SizedBox(
-                                width: 250,
-                                child: Texts().text(
-                                    'التذكير  بالحفاظ على النظافة',
-                                    20,
-                                    Theme.of(context).accentColor),
-                              )
-                            ]),
-                        Divider(),
-                        Row(
-                            mainAxisAlignment: MainAxisAlignment.end,
-                            children: <Widget>[
-                              buildedswitch('getout', 'getout', 2),
-                              SizedBox(
-                                width: 250,
-                                child: Texts().text(
-                                    'التذكير بالتدابير الوقائية عند الخروج من البيت',
-                                    20,
-                                    Theme.of(context).accentColor),
-                              )
-                            ]),
-                        Divider(),
-                        Row(
-                            mainAxisAlignment: MainAxisAlignment.end,
-                            children: <Widget>[
-                              buildedswitch("eat", "eat", 3),
-                              SizedBox(
-                                width: 250,
-                                child: Texts().text('التذكير بنظام التغذية', 20,
-                                    Theme.of(context).accentColor),
-                              )
-                            ]),
-                        Row(
-                            mainAxisAlignment: MainAxisAlignment.end,
-                            children: <Widget>[
-                              buildedswitch("sport", "sport", 4),
-                              SizedBox(
-                                width: 250,
-                                child: Texts().text('التذكير بالنظام الرياضي ',
-                                    20, Theme.of(context).accentColor),
-                              )
-                            ]),
-                        Divider(color: Colors.white, height: 30),
-                        Padding(
-                          padding: const EdgeInsets.all(0),
-                          child: Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                              children: <Widget>[
-                                Container(
-                                  width:
-                                      MediaQuery.of(context).size.width / 2.5,
-                                  child: RaisedButton(
-                                    padding: EdgeInsets.all(15),
-                                    onPressed: () => stopallnotifications(),
-                                    child: Text(
-                                      "ايقاف الكل",
-                                      style: TextStyle(fontSize: 15),
-                                    ),
-                                  ),
+                            Container(
+                              width: MediaQuery.of(context).size.width / 2.5,
+                              child: RaisedButton(
+                                padding: EdgeInsets.all(15),
+                                onPressed: () => stopallnotifications(),
+                                child: Text(
+                                  getTranslated(
+                                      context, "notificationStopAllButton"),
+                                  style: TextStyle(fontSize: 15),
                                 ),
-                                Container(
-                                  width:
-                                      MediaQuery.of(context).size.width / 2.5,
-                                  child: RaisedButton(
-                                    padding: EdgeInsets.all(15),
-                                    color: Colors.green,
-                                    child: Text(
-                                      'دليل إستخدام المنبه',
-                                      style: TextStyle(
-                                          color: Colors.white, fontSize: 15),
-                                    ),
-                                    onPressed: () => Navigator.push(
-                                        context,
-                                        MaterialPageRoute(
-                                            builder: (
-                                          BuildContext context,
-                                        ) =>
-                                                Guide())),
-                                  ),
+                              ),
+                            ),
+                            Container(
+                              height: 58,
+                              width: MediaQuery.of(context).size.width / 2.5,
+                              child: RaisedButton(
+                                padding: EdgeInsets.all(15),
+                                color: Colors.green,
+                                child: Text(
+                                  getTranslated(context, "notificationGuide"),
+                                  textAlign: TextAlign.center,
+                                  style: TextStyle(
+                                      color: Colors.white, fontSize: 15),
                                 ),
-                              ]),
-                        ),
-                      ])),
+                                onPressed: () => Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                        builder: (
+                                      BuildContext context,
+                                    ) =>
+                                            Guide())),
+                              ),
+                            ),
+                          ]),
+                    ),
+                  ])),
             ]),
           ),
         ));
